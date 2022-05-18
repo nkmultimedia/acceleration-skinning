@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/out/build
+/out/build/x64-Debug (default)
+/assets/flower/skeleton_animation_2
+/logs/acceleration_vectors
+/out/build/x64-Debug
+/CMakeSettings.json
