@@ -38,11 +38,11 @@ template <> struct buffer_stack<float, 3> {
     /** \name Element access
      * \brief  Allow vec3[0/1/2], or vec3(0/1/2), or vec3.at(0/1/2) */
     ///@{
-    inline float const& operator[](std::size_t index) const { return *( & x + index ); }
-    inline float& operator[](std::size_t index) { return *(&x + index); }
+    const float& operator[](std::size_t index) const;
+    float& operator[](std::size_t index);
 
-    inline float const& operator()(std::size_t index) const { return *(&x + index); }
-    inline float& operator()(std::size_t index) { return *(&x + index); }
+    const float& operator()(std::size_t index) const;
+    float& operator()(std::size_t index);
 
     float const& at(std::size_t index) const;
     float& at(std::size_t index);
@@ -61,10 +61,6 @@ template <> struct buffer_stack<float, 3> {
     ///@}
 
 };
-
-inline float dot(vec3 const& a, vec3 const& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-inline float norm(vec3 const& a) { return std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z); }
-inline vec3 normalize(vec3 const& a) { return a / norm(a); }
 
 /** \ingroup math
  * @{

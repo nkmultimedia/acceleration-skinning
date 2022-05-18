@@ -40,7 +40,9 @@ struct skeleton_structure
 {
     vcl::buffer<joint_connectivity> connectivity;           // Connectivity of the skeleton
     vcl::buffer<joint_geometry>     rest_pose;              // Skeleton of the rest pose expressed in local coordinates
+    vcl::buffer<joint_geometry>     proxy_rest_pose;              // Skeleton of the proxy rest pose expressed in local coordinates
     vcl::buffer<vcl::buffer<joint_geometry_time> > anim;    // Skeleton animation expressed in local coordinates (N_joint x N_time)
+    bool use_proxy = false;
 };
 
 // Storage structure to perform skinning deformation of a surface
@@ -48,8 +50,13 @@ struct skinning_structure
 {
     vcl::buffer< vcl::buffer<skinning_influence> > influence; // Skinning weights: for each vertex, store all influence values (bone+weight)
     vcl::buffer<vcl::vec3> rest_pose;                         // 3D position of the mesh in rest pose
+    vcl::buffer<vcl::vec3> proxy_rest_pose;                         // 3D position of the proxy mesh in rest pose
     vcl::buffer<vcl::vec3> rest_pose_normal;                  // 3D normals of the mesh in rest pose
+    vcl::buffer<vcl::vec3> proxy_rest_pose_normal;                  // 3D normals of the proxy mesh in rest pose
     vcl::mesh deformed;                                       // Deformed mesh
+    vcl::mesh deformed_proxy;                                 // Deformed proxy mesh
+    bool use_proxy = false;
+
 };
 
 struct bone_correspondance

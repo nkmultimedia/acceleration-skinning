@@ -3,9 +3,17 @@
 ################################################################################
 
 /.vs
-/out/build
 /out/build/x64-Debug (default)
 /assets/flower/skeleton_animation_2
 /logs/acceleration_vectors
+/assets/spot/velocity_skinning_5_diffused.json
+/assets/spot/velocity_skinning_4_diffused.json
+/assets/spot/velocity_skinning_3_diffused.json
+/assets/spot/velocity_skinning_2_diffused.json
+/assets/spot/velocity_skinning_1_diffused.json
+/assets/dragon/velocity_skinning_3.json
+/assets/dragon/velocity_skinning_2_diffused.json
+/assets/dragon/velocity_skinning_2.json
+/assets/dragon/velocity_skinning_1.json
 /out/build/x64-Debug
 /CMakeSettings.json

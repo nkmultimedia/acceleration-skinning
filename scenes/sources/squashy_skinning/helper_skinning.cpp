@@ -20,45 +20,24 @@ void compute_skinning(skinning_structure& skinning,
                       const vcl::buffer<joint_geometry>& skeleton_rest_pose)
 {
     const size_t N_vertex = skinning.rest_pose.size();
-
-    std::vector<mat3> T(skeleton_current.data.size());
-    std::vector<vec3> tr(skeleton_current.data.size());
-
-    for (int k = 0; k < T.size(); ++k)
-    {
-        const quaternion& q = skeleton_current.data[k].r;
-        const vec3& p = skeleton_current.data[k].p;
-
-        const quaternion& q0 = skeleton_rest_pose.data[k].r;
-        const vec3& p0 = skeleton_rest_pose.data[k].p;
-
-        const quaternion qT = q * conjugate(q0);
-        const mat3 mT = qT.matrix();
-
-        tr[k] = p - mT*p0;
-        T[k] = mT;
-    }
-
-
     for(size_t k=0; k<N_vertex; ++k)
     {
         const buffer<skinning_influence>& influence = skinning.influence.data[k];
 
         // Transformation matrix for skinning
-        mat3 M = mat3::zero();
-        vec3 t = {0,0,0};
-
+        mat3 R = mat3::zero();
+        vec3 tr = {0,0,0};
         for(size_t kb=0; kb<influence.size(); ++kb) // Loop over influencing joints
         {
             const int idx = influence.data[kb].joint;
             const float w = influence.data[kb].weight;
 
-            //const quaternion& r = skeleton_current.data[idx].r;
-            //const vec3& p = skeleton_current.data[idx].p;
+            const quaternion& r = skeleton_current.data[idx].r;
+            const vec3& p = skeleton_current.data[idx].p;
 
-            //const quaternion& r0 = skeleton_rest_pose.data[idx].r;
-            //const quaternion r0_inv = conjugate(r0);
-            //const vec3& p0 = skeleton_rest_pose.data[idx].p;
+            const quaternion& r0 = skeleton_rest_pose.data[idx].r;
+            const quaternion r0_inv = conjugate(r0);
+            const vec3& p0 = skeleton_rest_pose.data[idx].p;
 
 
             // Convert rotation/translation to matrix
@@ -68,20 +47,19 @@ void compute_skinning(skinning_structure& skinning,
             // Skinning
             //M += w*T*T0_inv;
 
-            //R  += w * (r * r0_inv).matrix();
-            //tr += w * (p - (r*r0_inv).apply(p0));
+            R  += w * (r * r0_inv).matrix();
+            tr += w * (p - (r*r0_inv).apply(p0));
 
-            M += w * T[idx];
-            t += w * tr[idx];
+
         }
 
 
         // Apply skinning transform on vertex
         const vec3& p0 = skinning.rest_pose.data[k];
-        skinning.deformed.position.data[k] = M*p0+t;
+        skinning.deformed.position.data[k] = R*p0+tr;
 
         const vec3& n0 = skinning.rest_pose_normal.data[k];
-        skinning.deformed.normal.data[k] = M*n0;
+        skinning.deformed.normal.data[k] = R*n0;
     }
 
 }

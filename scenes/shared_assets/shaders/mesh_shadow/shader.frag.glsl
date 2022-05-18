@@ -19,8 +19,10 @@ uniform vec3 color     = vec3(1.0, 1.0, 1.0);
 uniform float color_alpha = 1.0;
 uniform float ambiant  = 0.2;
 uniform float diffuse  = 0.8;
-uniform float specular = 0.5;
-uniform int specular_exponent = 128;
+//uniform float specular = 0.5;
+float specular = 0.1;
+//uniform int specular_exponent = 128;
+int specular_exponent = 512;
 
 vec3 light = vec3(camera_position.x, camera_position.y, camera_position.z);
 
@@ -58,7 +60,6 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
     if(projCoords.z > 1.0)
         shadow = 0.0;
-
     return shadow;
 }
 
@@ -76,7 +77,8 @@ void main()
 
     vec3 white = vec3(1.0);
     vec4 color_texture = texture(texture_sampler, fragment.texture_uv);
-    vec3 c = (ambiant  + (1.0-shadow) * diffuse_value)*color.rgb*fragment.color.rgb*color_texture.rgb + specular_value*white;
+    vec3 c = (ambiant  + (1.0-shadow) * diffuse_value)*color.rgb*fragment.color.rgb*color_texture.rgb;// + specular_value*white;
+    vec4 s = vec4(specular_value*white, 0.25);
 
-    FragColor = vec4(c, color_texture.a*fragment.color.a*color_alpha);
+    FragColor = vec4(c, color_texture.a*fragment.color.a*color_alpha) + s;
 }

@@ -50,7 +50,7 @@ struct painting_structure
 
 };
 
-enum gui_parameters_display_type {display_sphere, display_character, display_cylinder_bending, display_cylinder_translate, display_cylinder_linear, display_cylinder_sinusoidal_translate, display_cylinder_sinusoidal_bend, display_cylinder_sinusoidal_twist,  display_rondinella, display_bar, display_girafe, display_spot, display_flower, display_dragon, display_snail, display_custom};
+enum gui_parameters_display_type {display_sphere, display_character, display_cylinder_bending, display_cylinder_translate, display_cylinder_linear, display_cylinder_sinusoidal_translate, display_cylinder_sinusoidal_bend, display_cylinder_sinusoidal_twist,  display_rondinella, display_bar, display_girafe, display_spot, display_flower, display_doll, display_dragon, display_snail, display_custom};
 struct gui_parameters
 {
     int display_type = display_sphere;
@@ -156,6 +156,8 @@ struct scene_model : scene_base
     skinning_structure skinning; // Encode skinning weights, rest pose mesh, deformed mesh
     vcl::mesh_drawable character_visual; // Displayable final mesh
 
+    vcl::mesh_drawable additional_character;
+    bool display_additional_character = false;
 
     vcl::curve_drawable painting_cursor;
 
@@ -189,6 +191,7 @@ struct scene_model : scene_base
 
     vcl::buffer<joint_geometry> skeleton_current;
     vcl::buffer<joint_geometry> skeleton_rest_pose;
+    vcl::buffer<joint_geometry> skeleton_proxy_rest_pose;
 
     vcl::buffer<vcl::speed_tracker> skeleton_joint_speed;
     //vcl::buffer<vcl::speed_tracker> vertex_speed;
@@ -208,6 +211,8 @@ struct scene_model : scene_base
     vcl::buffer< vcl::vec3 > center_of_mass_per_joint_manual_offset;
 
     vcl::buffer<vcl::vec3> save_skinning;
+    vcl::buffer<vcl::vec3> save_skinning_proxy;
+    bool compute_deformation_on_proxy = false;  // toggle the use of a proxy mesh
 
     vcl::buffer<vcl::buffer<float> > skinning_weights_per_joint_per_vertex; // full weights stored as weights[joint][vertex]
 

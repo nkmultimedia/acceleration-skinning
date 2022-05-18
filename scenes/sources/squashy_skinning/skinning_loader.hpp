@@ -7,6 +7,7 @@ struct data_loaded
 {
     skeleton_structure skeleton;
     vcl::mesh shape;
+    vcl::mesh proxy_shape;
     vcl::buffer< vcl::buffer<skinning_influence> > skinning_rig;
     vcl::buffer<float> weight_flappy;
     vcl::buffer<float> squashing_power_buffer;
@@ -21,6 +22,7 @@ struct data_loaded
     GLuint shader;
     GLuint texture_id;
     float anim_time_max;
+    bool deform_proxy = false;
 };
 
 bool check_integrity(data_loaded const& data);
@@ -63,6 +65,7 @@ void load_girafe_data   (skeleton_structure& skeleton, skinning_structure& skinn
 data_loaded load_girafe2_data(GLuint shader);
 data_loaded load_spot_data(GLuint shader);
 data_loaded load_flower_data(GLuint shader);
+data_loaded load_doll_data(GLuint shader);
 data_loaded load_dragon_data(GLuint shader);
 data_loaded load_snail_data(GLuint shader);
 data_loaded load_custom_data(GLuint shader);
