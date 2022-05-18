@@ -70,11 +70,11 @@ struct mat<3,3> {
 
     /** \name Element access */
     ///@{
-    inline const float& operator[](std::size_t offset) const { return *(&xx + offset); }; /**< value = mat[i] */
-    inline float& operator[](std::size_t offset) { return *(&xx + offset); };             /**< mat[i] = value */
+    const float& operator[](std::size_t offset) const; /**< value = mat[i] */
+    float& operator[](std::size_t offset);             /**< mat[i] = value */
 
-    inline const float& operator()(std::size_t index1, std::size_t index2) const { return *(&xx+index2+3*index1); }; /**< value = mat(x,y) */
-    inline float& operator()(std::size_t index1, std::size_t index2) { return *(&xx + index2 + 3 * index1); };;             /**< mat(x,y) = value */
+    const float& operator()(std::size_t index1, std::size_t index2) const; /**< value = mat(x,y) */
+    float& operator()(std::size_t index1, std::size_t index2);             /**< mat(x,y) = value */
     ///@}
 };
 

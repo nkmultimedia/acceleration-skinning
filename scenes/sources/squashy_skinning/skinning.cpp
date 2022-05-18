@@ -23,6 +23,8 @@
 
 using namespace vcl;
 
+float hack_hip_skirt_adjust = 0.7f;
+
 float degrees_to_radians(float deg) { return deg * MATH_PI / 180.0f; }
 float clamp(float value, float min, float max)
 {
@@ -125,11 +127,11 @@ vec3 filter_signal(vec3 const& input_signal, vec3 const& velocity, vec3 const& a
 	else
 		follow_through_ratio = 1.0f;
 
-	if (applySmoothstep)
+	if(applySmoothstep)
 		follow_through_ratio = smoothstep(0.0f, 1.0f, follow_through_ratio);
 
 
-	output_signal = input_signal * (follow_through_ratio);
+	output_signal = input_signal * follow_through_ratio;
 
 	return output_signal;
 }
@@ -206,7 +208,7 @@ vec3 deformation_stretch(float w_stretch, vec3 const& u_joint_vertex, vec3 const
 vec3 deformation_lift(float w_lift, vec3 const& vertex_deformation, vec3 const& vertex_normal, vec3 const& u_joint_vertex, float const quadratic_coef, float max_threshold)
 {
 	//TODO: find vertex normal; project vertex_defomation onto it. scale by that value?
-	vec3 vertex_deformation_normalized = normalize(vertex_deformation);
+	//vec3 vertex_deformation_normalized = normalize(vertex_deformation);
 	vec3 vertex_normal_normalized = normalize(vertex_normal);
 
 	// quadratic mapping
@@ -219,14 +221,14 @@ vec3 deformation_lift(float w_lift, vec3 const& vertex_deformation, vec3 const& 
 	vec3 deformation = w_lift * dot(vertex_deformation, vertex_normal_normalized)* vertex_normal_normalized;
 	//vec3 deformation = w_lift * vertex_deformaion;
 
-	float const deformation_norm = norm(deformation);
-	if (deformation_norm > max_threshold)
-	{
-		float const reduction_factor = max_threshold / deformation_norm;
-		deformation = deformation * reduction_factor;
-	}
-	return deformation + vertex_deformation;
-	//return deformation;
+	//float const deformation_norm = norm(deformation);
+	//if (deformation_norm > max_threshold)
+	//{
+	//	float const reduction_factor = max_threshold / deformation_norm;
+	//	deformation = deformation * reduction_factor;
+	//}
+	//return deformation + vertex_deformation;
+	return deformation;
 }
 
 void scene_model::velocity_skinning(float magnitude)
@@ -302,14 +304,15 @@ void scene_model::velocity_skinning(float magnitude)
 				float const linear_acceleration_norm = norm(linear_acceleration);
 
 				vec3 flappy;
-				vec3 squashy;
+				vec3 squashy = vec3(0, 0, 0);
 				vec3 follow_through = vec3(0, 0, 0);
 			
 				// squash deformation
-				if (gui_param.squash_deformation_parameter == 0)	// deform using velocity
-					squashy = deformation_squashy_linear_speed(w_squashy, linear_speed, linear_speed_norm, p_vertex, center_of_mass, gui_param.squashing_max);
-				else
-					squashy = deformation_squashy_linear_speed(w_squashy, linear_acceleration, linear_acceleration_norm, p_vertex, center_of_mass, gui_param.squashing_max);
+				// DISABLING AND BYPASSING SQUASH FOR PERFORMANCE IMPROVEMENT
+				//if (gui_param.squash_deformation_parameter == 0)	// deform using velocity
+				//	squashy = deformation_squashy_linear_speed(w_squashy, linear_speed, linear_speed_norm, p_vertex, center_of_mass, gui_param.squashing_max);
+				//else
+				//	squashy = deformation_squashy_linear_speed(w_squashy, linear_acceleration, linear_acceleration_norm, p_vertex, center_of_mass, gui_param.squashing_max);
 
 				// flappy deformation (using velocity)
 				flappy = deformation_flappy_linear_speed(w_flappy_drag, linear_speed, gui_param.flappy_max_translation);
@@ -350,14 +353,16 @@ void scene_model::velocity_skinning(float magnitude)
 			{
 				size_t const vertex = vertices.data[k_vertex];
 				float const w_skinning = vertices_weights.data[k_vertex];
-				vec3 const& p_vertex = save_skinning.data[vertex];
+				vec3 const& p_vertex = /*compute_deformation_on_proxy ? save_skinning_proxy.data[vertex] :*/ save_skinning.data[vertex];
+						
 				vec3 const u_joint_vertex = p_vertex - p_joint;
 				//vec3 const u_joint_vertex = p_joint * (p_vertex, p_joint);
 				vec3 const vertex_speed_drag = cross(angular_speed_drag, u_joint_vertex);
 				float const vertex_speed_drag_norm = norm(vertex_speed_drag);
 				vec3 const vertex_speed_squash = cross(angular_speed_squash, u_joint_vertex);
 				float const vertex_speed_squash_norm = norm(vertex_speed_squash);
-				vec3 const vertex_normal = skinning.rest_pose_normal[k_vertex];
+				vec3 const vertex_normal = /*compute_deformation_on_proxy ? skinning.proxy_rest_pose_normal[k_vertex] :*/ //skinning.rest_pose_normal[k_vertex];
+					skinning.deformed.normal[k_vertex];
 
 				vec3 const& center_of_mass = position_center_of_mass(joint);
 				vec3 const axis = normalize(center_of_mass - p_joint);
@@ -395,11 +400,11 @@ void scene_model::velocity_skinning(float magnitude)
 				float const vertex_acceleration_squash_norm = norm(vertex_acceleration_squash);
 
 
-				vec3 squashy = vec3(0, 0, 0);
+				vec3 squashy = vec3(0, 0, 0);    
 				vec3 const flappy_stretch = deformation_stretch(stretch_power_global, u_joint_vertex, angular_speed_stretch, centrepetal_acceleration_scale, gui_param.stretch_quad_coef, gui_param.stretch_max);
 				//vec3 const flappy_stretch = deformation_stretch(stretch_power_global, centripetal_acceleration, gui_param.stretch_max);
 				
-				// squash --- temporarily disabling to boost performance -----
+				// DISABLING AND BYPASSING SQUASH FOR PERFORMANCE IMPROVEMENT
 				//if (gui_param.squash_deformation_parameter == 0)	// deform using velocity
 				//{
 				//	squashy = deformation_squashy_rotation_speed(w_squashy, p_vertex, p_joint, un_medial, angular_speed_squash, vertex_speed_squash_norm, center_of_mass, gui_param.squash_around, gui_param.squashing_max);
@@ -477,7 +482,10 @@ void scene_model::velocity_skinning(float magnitude)
 
 
 					deformation_pass_one = squashy + flappy_drag + flappy_follow_through + flappy_stretch;
-					postProcess = deformation_lift(lift_power_global, deformation_pass_one, vertex_normal, u_joint_vertex, gui_param.lift_quad_coef, gui_param.lift_max);
+					postProcess = deformation_lift(lift_power_global, deformation_pass_one, skinning.deformed_proxy.normal[k_vertex], u_joint_vertex, gui_param.lift_quad_coef, gui_param.lift_max);
+					//postProcess = deformation_pass_one;
+
+					//postProcess = dot(deformation_pass_one, vertex_normal) * vertex_normal;
 
 					
 
@@ -506,8 +514,8 @@ void scene_model::velocity_skinning(float magnitude)
 
 				}
 
-				deformation_per_vertex.data[vertex] += w_skinning * (postProcess);
-				//deformation_per_vertex.data[vertex] += w_skinning * (squashy + flappy_drag + flappy_follow_through + flappy_stretch + postProcess);
+				//deformation_per_vertex.data[vertex] += w_skinning * (postProcess);
+				deformation_per_vertex.data[vertex] += w_skinning * (squashy + flappy_drag + flappy_follow_through + flappy_stretch + postProcess);
 				//deformation_per_vertex.data[vertex] += w_skinning * (squashy + flappy_drag + flappy_follow_through + flappy_stretch);
 				//deformation_per_vertex.data[vertex] += w_skinning * (squashy + flappy_drag + flappy_follow_through);
 			}
@@ -516,9 +524,30 @@ void scene_model::velocity_skinning(float magnitude)
 
 	}
 
+	// Weight the deformation procedurally
+	float y_max = 1.300f;
+	float y_min = -1.373f;
+	for (size_t k = 0; k < deformation_per_vertex.size(); ++k)
+	{
+		float y = skinning.deformed.position[k].y;
+		float alpha =  clamp( 1-(y - y_min) / (y_max - y_min) ,0,1);
+		float w = std::pow(alpha,hack_hip_skirt_adjust);
+		deformation_per_vertex[k] = w * deformation_per_vertex[k];
+	}
+
+
+
 	for (size_t k = 0; k < deformation_per_vertex.size(); ++k)
 		skinning.deformed.position[k] += deformation_per_vertex[k];
 
+	
+	if (compute_deformation_on_proxy)
+	{
+		for (size_t k = 0; k < deformation_per_vertex.size(); ++k) {
+			//skinning.deformed.position[k] += deformation_per_vertex[k];
+			skinning.deformed_proxy.position[k] += deformation_per_vertex[k];
+		}
+	}
 }
 
 
@@ -639,11 +668,34 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 	timer_measurement["skinning"].toc();
 
 
+	// Damien: Hack for displaying doll
+	if(display_additional_character)
+	{
+		quaternion q = skeleton_current[0].r;
+		additional_character.uniform.transform.rotation = q.matrix();
+		//additional_character.uniform.transform.translation = skeleton_current[0].p;
+		draw(additional_character, scene.camera);
+	}
+
 
 	character_visual.update_position(skinning.deformed.position);
 	character_visual.update_normal(skinning.deformed.normal);
 
 	save_skinning = skinning.deformed.position;
+	if (compute_deformation_on_proxy) {
+		/*Damien hack - need to compute the skinning on the two meshes */
+		// ********************************
+		auto temp_rest_pose = skinning.rest_pose;
+		skinning.rest_pose = skinning.proxy_rest_pose;
+		compute_skinning(skinning, skeleton_current, skeleton_rest_pose);
+		skinning.deformed_proxy.position = skinning.deformed.position;
+		skinning.deformed_proxy.normal = skinning.deformed.normal;
+
+		skinning.deformed.position = save_skinning;
+		skinning.rest_pose = temp_rest_pose;
+		// ********************************
+	}
+		
 
 	//    // Update per-vertex velocity
 	//    for(int k=0; k<int(skinning.deformed.position.size()); ++k)
@@ -677,13 +729,21 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 
 	timer_measurement["normals"].tic();
 	normal(skinning.deformed.position, skinning.deformed.connectivity, skinning.deformed.normal);
+	if(compute_deformation_on_proxy)
+		normal(skinning.deformed_proxy.position, skinning.deformed.connectivity, skinning.deformed_proxy.normal);
 	timer_measurement["normals"].toc();
 
 	if (gui_param.display_deformed_surface)
 	{
 		character_visual.update_position(skinning.deformed.position);
 		character_visual.update_normal(skinning.deformed.normal);
+
+		if (compute_deformation_on_proxy) {
+			character_visual.update_position(skinning.deformed_proxy.position);
+			character_visual.update_normal(skinning.deformed_proxy.normal);
+		}
 	}
+
 
 
 
@@ -800,8 +860,8 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 
 
 
-//recording -- turning off to improve performance ----
-	/*{
+//recording
+	{
 		if (gui_param.record_anim) {
 			if (local_time_record < timer_skeleton.t_max)
 				timer_skeleton.t = std::min(local_time_record, timer_skeleton.t_max - 0.01f);
@@ -819,7 +879,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 
 
 
-	}*/
+	}
 
 
 
@@ -829,9 +889,10 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 		//glPolygonOffset( 1.0, 1.0 );
 
 		glUseProgram(shaders["mesh_shadow"]);
+		uniform(shaders["mesh_shadow"], "specular", (float)0.0);
 		character_visual.shader = shaders["mesh_shadow"];
 
-		groundplane_visual.shader = shaders["mesh_shadow"];
+		//groundplane_visual.shader = shaders["mesh_shadow"];
 		//character_visual.texture_id = 0;
 
 
@@ -844,8 +905,8 @@ void scene_model::frame_draw(std::map<std::string, GLuint>&, scene_structure& _s
 		uniform(shaders["mesh_shadow"], "lightSpaceMatrix", lightCam);
 
 		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, scene.texture_green);
-		draw(groundplane_visual, scene.camera);
+		//glBindTexture(GL_TEXTURE_2D, scene.texture_green);
+		//draw(groundplane_visual, scene.camera);
 		glBindTexture(GL_TEXTURE_2D, character_visual.texture_id == 0 ? scene.texture_white : character_visual.texture_id);
 		
 		//GLuint id_save = character_visual.texture_id;
@@ -1408,33 +1469,35 @@ void scene_model::set_gui()
 
 	if (ImGui::CollapsingHeader("Effects"))
 	{
-		ImGui::Text("Deformer Controls:");
+		// DISABLING AND BYPASSING LOCAL DEFORMATION CONTROLS FOR PERFORMANCE IMPROVEMENT
+		/*ImGui::Text("Deformer Controls:");
 		ImGui::RadioButton("Local", &gui_param.deformer_affects, 0); ImGui::SameLine();
 		ImGui::RadioButton("Global", &gui_param.deformer_affects, 1);
 		ImGui::Spacing();
-		ImGui::Spacing();
+		ImGui::Spacing();*/
 
 		unsigned int targetIdx = (picking.selected_joint_true == -1) ? 0 : picking.selected_joint_true;
 
-		ImGui::Text("Squash:");
-		ImGui::RadioButton("Velocity", &gui_param.squash_deformation_parameter, 0); ImGui::SameLine();
-		ImGui::RadioButton("Acceleration", &gui_param.squash_deformation_parameter, 1);
-		if (gui_param.deformer_affects == 0)
-		{
-			// local control: use selected joint as index
-			ImGui::SliderFloat("Squash Power", &squashing_power_buffer[targetIdx], 0.0f, 5.0f, "%.2f", 2.0f); ImGui::SameLine();
-			bool fill = ImGui::Button("Fill");
-			if (fill)
-				squashing_power_buffer.fill(squashing_power_buffer[targetIdx]);
-		}
-		else
-			// global control
-			ImGui::SliderFloat("Squash Power", &squashing_power_global, 0.0f, 5.0f, "%.2f", 2.0f);
-		if (gui_param.squash_deformation_parameter == 0)
-			ImGui::SliderFloat("Sq Damping", &rotation_tracker::alpha_speed_squash, 0.2, 0.99, "%.2f", 2.0f);
-		else if (gui_param.squash_deformation_parameter == 1)
-			ImGui::SliderFloat("Sq Damping", &rotation_tracker::alpha_acceleration_squash, 0.2, 0.99, "%.2f", 2.0f);
-		ImGui::SliderFloat("Maximum Squash", &gui_param.squashing_max, 0, 5.0f, "%.2f", 2.0f);
+		// DISABLING AND BYPASSING SQUASH FOR PERFORMANCE IMPROVEMENT
+		//ImGui::Text("Squash:");
+		//ImGui::RadioButton("Velocity", &gui_param.squash_deformation_parameter, 0); ImGui::SameLine();
+		//ImGui::RadioButton("Acceleration", &gui_param.squash_deformation_parameter, 1);
+		//if (gui_param.deformer_affects == 0)
+		//{
+		//	// local control: use selected joint as index
+		//	ImGui::SliderFloat("Squash Power", &squashing_power_buffer[targetIdx], 0.0f, 5.0f, "%.2f", 2.0f); ImGui::SameLine();
+		//	bool fill = ImGui::Button("Fill");
+		//	if (fill)
+		//		squashing_power_buffer.fill(squashing_power_buffer[targetIdx]);
+		//}
+		//else
+		//	// global control
+		//	ImGui::SliderFloat("Squash Power", &squashing_power_global, 0.0f, 5.0f, "%.2f", 2.0f);
+		//if (gui_param.squash_deformation_parameter == 0)
+		//	ImGui::SliderFloat("Sq Damping", &rotation_tracker::alpha_speed_squash, 0.2, 0.99, "%.2f", 2.0f);
+		//else if (gui_param.squash_deformation_parameter == 1)
+		//	ImGui::SliderFloat("Sq Damping", &rotation_tracker::alpha_acceleration_squash, 0.2, 0.99, "%.2f", 2.0f);
+		//ImGui::SliderFloat("Maximum Squash", &gui_param.squashing_max, 0, 5.0f, "%.2f", 2.0f);
 
 		ImGui::Spacing();
 		ImGui::Spacing();
@@ -1822,6 +1885,7 @@ void scene_model::set_gui()
 		bool click_girafe = ImGui::RadioButton("Girafe", &gui_param.display_type, display_girafe);
 		bool click_spot = ImGui::RadioButton("Spot", &gui_param.display_type, display_spot);
 		bool click_flower = ImGui::RadioButton("Flower", &gui_param.display_type, display_flower);
+		bool click_doll = ImGui::RadioButton("Doll", &gui_param.display_type, display_doll);
 		bool click_dragon = ImGui::RadioButton("Dragon", &gui_param.display_type, display_dragon);
 		bool click_snail = ImGui::RadioButton("Snail", &gui_param.display_type, display_snail);
 		bool click_custom = ImGui::RadioButton("Custom", &gui_param.display_type, display_custom);
@@ -1846,15 +1910,20 @@ void scene_model::set_gui()
 		if (click_girafe)  data_load = load_girafe2_data(shaders["mesh"]);
 		if (click_spot)    data_load = load_spot_data(shaders["mesh"]);
 		if (click_flower)    data_load = load_flower_data(shaders["mesh"]);
+		if (click_doll) {
+			data_load = load_doll_data(shaders["mesh"]); display_additional_character = true;
+		}
 		if (click_dragon)  data_load = load_dragon_data(shaders["mesh"]);
 		if (click_snail)   data_load = load_snail_data(shaders["mesh"]);
 		if (click_custom)   data_load = load_custom_data(shaders["mesh"]);
 
-		if (click_girafe || click_spot || click_flower || click_dragon || click_snail || click_custom)
+		if (click_girafe || click_spot || click_flower || click_doll || click_dragon || click_snail || click_custom)
 		{
 			skeleton = data_load.skeleton;
 			skinning.influence = data_load.skinning_rig;
+			//skinning.deformed = (data_load.deform_proxy ? data_load.proxy_shape : data_load.shape);
 			skinning.deformed = data_load.shape;
+			//skinning.rest_pose = (data_load.deform_proxy ? data_load.proxy_shape.position : data_load.shape.position);
 			skinning.rest_pose = data_load.shape.position;
 			skinning.rest_pose_normal = data_load.shape.normal;
 			symmetrical_joint = data_load.symmetry;
@@ -1867,11 +1936,22 @@ void scene_model::set_gui()
 			follow_through_power_rotation_buffer = data_load.follow_through_power_rotation_buffer;
 			flapping_power_twist_buffer = data_load.flapping_power_twist_buffer;
 			flapping_power_bend_buffer = data_load.flapping_power_bend_buffer;
+			//character_visual = (data_load.deform_proxy ? data_load.proxy_shape : data_load.shape);
 			character_visual = data_load.shape;
 			character_visual.shader = data_load.shader;
 			//character_visual.texture_id = data_load.texture_id;
 			real_texture_id = data_load.texture_id;	// don't tamper with real_texture_id; use this to reload the texture if the duser disables it
 			timer_skeleton.t_max = data_load.anim_time_max;
+			if (data_load.deform_proxy)
+			{
+				skinning.deformed_proxy = data_load.proxy_shape;
+				skinning.proxy_rest_pose = data_load.proxy_shape.position;
+				skinning.proxy_rest_pose_normal = data_load.proxy_shape.normal;
+				compute_deformation_on_proxy = true;
+
+			}
+			else
+				compute_deformation_on_proxy = false;
 		}
 		else if (click_sphere || click_cylinder_bending || click_cylinder_translate || click_rondinella ||
 			click_bar || click_character)
@@ -1882,7 +1962,7 @@ void scene_model::set_gui()
 				real_texture_id = 0;
 		}
 		if (click_sphere || click_cylinder_bending || click_cylinder_translate || click_rondinella ||
-			click_bar || click_character || click_girafe || click_spot || click_flower || click_dragon || click_snail || click_custom) {
+			click_bar || click_character || click_girafe || click_spot || click_doll || click_flower || click_dragon || click_snail || click_custom) {
 			resize_structure();
 		}
 	}
@@ -1982,7 +2062,11 @@ void scene_model::set_gui()
 		ImGui::Spacing();
 		ImGui::Spacing();
 
+		
+
 	}
+	ImGui::Checkbox("Additional Character", &display_additional_character);
+	ImGui::SliderFloat("hack_hip_skirt_adjust", &hack_hip_skirt_adjust, 0.2f, 2.0f);
 	//    {
 	//        static int counter = 0;
 	//        if(counter%500==0)
@@ -2010,11 +2094,14 @@ void scene_model::resize_structure()
 
 
 	skeleton_current = local_to_global(skeleton_local_current, skeleton.connectivity);
+
 	//skeleton_speed.resize(skeleton_current.size());
 
 	//skeleton_acceleration.resize(skeleton_current.size());
 	//skeleton_velocity_tracker.resize(skeleton_current.size());
 	skeleton_rest_pose = local_to_global(skeleton.rest_pose, skeleton.connectivity);
+	if(skeleton.use_proxy)
+		skeleton_proxy_rest_pose = local_to_global(skeleton.proxy_rest_pose, skeleton.connectivity);
 	//skeleton_angular_velocity_tracker.resize(skeleton_current.size());
 
 
@@ -2074,7 +2161,10 @@ void scene_model::resize_structure()
 	update_painted_color();
 
 	skeleton_son_connectivity = compute_joint_sons(skeleton.connectivity);
-	vertex_to_bone_correspondance = compute_bone_correspondance(skinning.rest_pose, skinning.influence, skeleton_son_connectivity, skeleton_rest_pose);
+	if(skeleton.use_proxy)
+		vertex_to_bone_correspondance = compute_bone_correspondance(skinning.proxy_rest_pose, skinning.influence, skeleton_son_connectivity, skeleton_proxy_rest_pose);
+	else
+		vertex_to_bone_correspondance = compute_bone_correspondance(skinning.rest_pose, skinning.influence, skeleton_son_connectivity, skeleton_rest_pose);
 
 
 	// Rig extended to ancestor
@@ -2224,7 +2314,7 @@ void scene_model::setup_data(std::map<std::string, GLuint>& _shaders, scene_stru
 	shaders["mesh_shadow"] = create_shader_program("scenes/shared_assets/shaders/mesh_shadow/shader.vert.glsl",
 		"scenes/shared_assets/shaders/mesh_shadow/shader.frag.glsl");
 
-	//_scene.texture_white = create_texture_gpu(image_load_png("assets/spot/texture.png"));
+	//_scene.texture_white = create_texture_gpu(image_load_png("assets/spot/`png"));
 
 
 	glUseProgram(shaders["mesh_shadow"]);
@@ -2261,6 +2351,14 @@ void scene_model::setup_data(std::map<std::string, GLuint>& _shaders, scene_stru
 	load_bending_cylinder_data(skeleton, skinning, weight_flappy, weight_squashy, character_visual, timer_skeleton, shader_mesh);
 	init_local_buffers(squashing_power_buffer, flapping_power_translate_buffer, flapping_power_unified_buffer, bendy_stretch_power_buffer, follow_through_power_translate_buffer, follow_through_power_rotation_buffer, flapping_power_twist_buffer, flapping_power_bend_buffer, skinning.rest_pose.size());
 
+
+	additional_character = mesh_load_file_obj("assets/doll/character.obj");
+	additional_character.shader = shaders["mesh"];
+	additional_character.uniform.color = vec3(254.0/255.0, 222.0/255.0, 207.0/255.0);
+	additional_character.uniform.shading.specular = 0.1;
+	//additional_character.uniform.color = vec3(209.0/255.0, 191.0/255.0, 191.0 / 255.0);
+	//additional_character.uniform.color = vec3(1.0f, 0.93f, 0.90f);
+	//additional_character.uniform.color = vec3(1.0f, 0.77f, 0.65f);
 
 	//data_loaded data_load = load_bending_cylinder_data(weight_squashy, shader_mesh);
 	//skeleton = data_load.skeleton;

@@ -1725,6 +1725,7 @@ ImU32 ImGui::GetColorU32(ImU32 col)
 // Helper: Key->value storage
 //-----------------------------------------------------------------------------
 
+// std::lower_bound but without the bullshit
 static ImVector<ImGuiStorage::Pair>::iterator LowerBound(ImVector<ImGuiStorage::Pair>& data, ImGuiID key)
 {
     ImVector<ImGuiStorage::Pair>::iterator first = data.begin();

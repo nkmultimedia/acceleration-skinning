@@ -113,117 +113,116 @@ mat3& mat3::set_col(std::size_t offset, const vec3& v)
     return *this;
 }
 
-//const float& mat3::operator[](std::size_t offset) const
-//{
-//    switch(offset) {
-//    case 0: return xx;
-//    case 1: return xy;
-//    case 2: return xz;
-//    case 3: return yx;
-//    case 4: return yy;
-//    case 5: return yz;
-//    case 6: return zx;
-//    case 7: return zy;
-//    case 8: return zz;
-//    default:
-//        std::cerr<<"Error: Try to access mat3["<<offset<<"]"<<std::endl;
-//        assert(false);
-//    }
-//	abort();
-//}
-//float& mat3::operator[](std::size_t offset)
-//{
-//    switch(offset) {
-//    case 0: return xx;
-//    case 1: return xy;
-//    case 2: return xz;
-//    case 3: return yx;
-//    case 4: return yy;
-//    case 5: return yz;
-//    case 6: return zx;
-//    case 7: return zy;
-//    case 8: return zz;
-//    default:
-//        std::cerr<<"Error: Try to access mat3["<<offset<<"]"<<std::endl;
-//        assert(false);
-//    }
-//	abort();
-//}
+const float& mat3::operator[](std::size_t offset) const
+{
+    switch(offset) {
+    case 0: return xx;
+    case 1: return xy;
+    case 2: return xz;
+    case 3: return yx;
+    case 4: return yy;
+    case 5: return yz;
+    case 6: return zx;
+    case 7: return zy;
+    case 8: return zz;
+    default:
+        std::cerr<<"Error: Try to access mat3["<<offset<<"]"<<std::endl;
+        assert(false);
+    }
+	abort();
+}
+float& mat3::operator[](std::size_t offset)
+{
+    switch(offset) {
+    case 0: return xx;
+    case 1: return xy;
+    case 2: return xz;
+    case 3: return yx;
+    case 4: return yy;
+    case 5: return yz;
+    case 6: return zx;
+    case 7: return zy;
+    case 8: return zz;
+    default:
+        std::cerr<<"Error: Try to access mat3["<<offset<<"]"<<std::endl;
+        assert(false);
+    }
+	abort();
+}
 
-//const float& mat3::operator()(std::size_t index1, std::size_t index2) const
-//{
-//
-//    switch(index1) {
-//    case 0:
-//        switch(index2) {
-//        case 0: return xx;
-//        case 1: return xy;
-//        case 2: return xz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    case 1:
-//        switch(index2) {
-//        case 0: return yx;
-//        case 1: return yy;
-//        case 2: return yz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    case 2:
-//        switch(index2) {
-//        case 0: return zx;
-//        case 1: return zy;
-//        case 2: return zz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    default:
-//        std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//        assert(false);
-//    }
-//	abort();
-//}
-//float& mat3::operator()(std::size_t index1, std::size_t index2)
-//{
-//    switch(index1) {
-//    case 0:
-//        switch(index2) {
-//        case 0: return xx;
-//        case 1: return xy;
-//        case 2: return xz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    case 1:
-//        switch(index2) {
-//        case 0: return yx;
-//        case 1: return yy;
-//        case 2: return yz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    case 2:
-//        switch(index2) {
-//        case 0: return zx;
-//        case 1: return zy;
-//        case 2: return zz;
-//        default:
-//            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//            assert(false);
-//        }
-//    default:
-//        std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
-//        assert(false);
-//    }
-//	abort();
-//}
-//
+const float& mat3::operator()(std::size_t index1, std::size_t index2) const
+{
+    switch(index1) {
+    case 0:
+        switch(index2) {
+        case 0: return xx;
+        case 1: return xy;
+        case 2: return xz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    case 1:
+        switch(index2) {
+        case 0: return yx;
+        case 1: return yy;
+        case 2: return yz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    case 2:
+        switch(index2) {
+        case 0: return zx;
+        case 1: return zy;
+        case 2: return zz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    default:
+        std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+        assert(false);
+    }
+	abort();
+}
+float& mat3::operator()(std::size_t index1, std::size_t index2)
+{
+    switch(index1) {
+    case 0:
+        switch(index2) {
+        case 0: return xx;
+        case 1: return xy;
+        case 2: return xz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    case 1:
+        switch(index2) {
+        case 0: return yx;
+        case 1: return yy;
+        case 2: return yz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    case 2:
+        switch(index2) {
+        case 0: return zx;
+        case 1: return zy;
+        case 2: return zz;
+        default:
+            std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+            assert(false);
+        }
+    default:
+        std::cerr<<"Error: Try to access mat3("<<index1<<","<<index2<<")"<<std::endl;
+        assert(false);
+    }
+	abort();
+}
+
 
 float det(const mat3& m)
 {

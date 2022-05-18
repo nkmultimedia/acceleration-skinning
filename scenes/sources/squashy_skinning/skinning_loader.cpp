@@ -1573,6 +1573,131 @@ data_loaded load_basic_animation_data_directory(parameters_basic_loader const& p
     return data;
 }
 
+data_loaded load_basic_animation_data_directory_withProxyGeo(parameters_basic_loader const& param)
+{
+    std::string const& dir = param.common_dir;
+    GLuint shader = param.shader;
+
+    data_loaded data;
+
+    buffer<buffer<int> > vertex_correspondance;
+    data.shape = mesh_load_file_obj(dir + "proxy.obj", vertex_correspondance);
+    data.shape.position *= param.scaling;
+    data.shape.normal = normal(data.shape.position, data.shape.connectivity);
+    data.shape.fill_empty_fields();
+    
+    data.proxy_shape = mesh_load_file_obj(dir + "mesh.obj", vertex_correspondance);
+    data.proxy_shape.position *= param.scaling;
+    data.proxy_shape.normal = normal(data.proxy_shape.position, data.proxy_shape.connectivity);
+    data.proxy_shape.fill_empty_fields();
+    data.deform_proxy = true;
+
+
+    buffer<std::string> joint_name;      read_from_file(dir + "skeleton_joint_name", joint_name);
+    buffer<int> joint_parent;            read_from_file(dir + "skeleton_connectivity_parent", joint_parent);
+    buffer<vec3> joint_translation;      read_from_file(dir + "skeleton_rest_pose_translation", joint_translation);
+    buffer<quaternion> joint_quaternion; read_from_file(dir + "skeleton_rest_pose_rotation", joint_quaternion);
+    //buffer<joint_connectivity> connectivity = read_skeleton_connectivity("assets/flower/skeleton_connectivity");
+    //buffer<joint_geometry> rest_pose = read_skeleton_geometry("assets/flower/skeleton_geometry_local", param.scaling);
+    buffer<buffer<int>> rig_joint;       read_from_file(dir + "rig_joint", rig_joint);
+    buffer<buffer<float>> rig_weights;   read_from_file(dir + "rig_weights", rig_weights);
+
+    data.texture_id = create_texture_gpu(image_load_png(dir + "texture.png"));
+
+
+    if (check_file_exist(dir + "skeleton_symmetry"))
+    {
+        buffer<int> symmetry;
+        read_from_file(dir + "skeleton_symmetry", symmetry);
+        size_t N = symmetry.size() / 2;
+        for (size_t k = 0; k < N; ++k) {
+            data.symmetry[symmetry[2 * k]] = symmetry[2 * k + 1];
+            data.symmetry[symmetry[2 * k + 1]] = symmetry[2 * k];
+        }
+    }
+
+
+
+    int N_joint = joint_name.size();
+    assert_vcl_no_msg(N_joint > 0);
+    for (int k = 0; k < N_joint; ++k)
+    {
+        data.skeleton.rest_pose.push_back({ param.scaling * joint_translation[k], joint_quaternion[k] });
+        data.skeleton.connectivity.push_back({ joint_parent[k], joint_name[k] });
+    }
+    data.skeleton.anim.resize(N_joint);
+    /*for (int k = 0; k < N_joint; ++k)
+    {
+        data.skeleton.anim[k].resize(3);
+        data.skeleton.anim[k][0].time = 0;
+        data.skeleton.anim[k][1].time = 1;
+        data.skeleton.anim[k][2].time = 2;
+
+        data.skeleton.anim[k][0].geometry = data.skeleton.rest_pose[k];
+        data.skeleton.anim[k][1].geometry = data.skeleton.rest_pose[k];
+        data.skeleton.anim[k][2].geometry = data.skeleton.rest_pose[k];
+    }*/
+
+    //    data.skeleton.anim[9][0].geometry.r = quaternion::axis_angle({1,0,0},-3.14f/4.0f);
+    //    data.skeleton.anim[9][1].geometry.r = quaternion::axis_angle({1,0,0},+3.14f/4.0f);
+    //    data.skeleton.anim[9][2].geometry.r = data.skeleton.anim[9][0].geometry.r;
+
+
+    //data.anim_time_max = 2.0f;
+    if (check_file_exist(dir + "skeleton_animation"))
+    {
+        data.skeleton.anim = read_skeleton_animation(dir + "skeleton_animation", param.scaling);  // t_max = 0.733f;
+        data.anim_time_max = find_animation_length(data.skeleton.anim);
+    }
+    else
+    {
+        data.skeleton.anim.resize(N_joint);
+        for (int k = 0; k < N_joint; ++k)
+        {
+            data.skeleton.anim[k].resize(3);
+            data.skeleton.anim[k][0].time = 0;
+            data.skeleton.anim[k][1].time = 1;
+            data.skeleton.anim[k][2].time = 2;
+
+            data.skeleton.anim[k][0].geometry = data.skeleton.rest_pose[k];
+            data.skeleton.anim[k][1].geometry = data.skeleton.rest_pose[k];
+            data.skeleton.anim[k][2].geometry = data.skeleton.rest_pose[k];
+        }
+        data.anim_time_max = 2.0f;
+    }
+    //timer.t_max = 0.733f;
+
+
+    assert_vcl_no_msg(rig_joint.size() == rig_weights.size());
+    data.skinning_rig.resize(rig_joint.size());
+    for (int k = 0; k< int(rig_joint.size()); ++k)
+    {
+        assert_vcl_no_msg(rig_joint[k].size() == rig_weights[k].size());
+        int N_dependencies = rig_joint[k].size();
+        data.skinning_rig[k].resize(N_dependencies);
+        for (int kb = 0; kb < N_dependencies; ++kb)
+        {
+            data.skinning_rig[k][kb].joint = rig_joint[k][kb];
+            data.skinning_rig[k][kb].weight = rig_weights[k][kb];
+        }
+    }
+
+    data.skinning_rig = map_correspondance(data.skinning_rig, vertex_correspondance);
+
+
+    /* int N_vertex = data.shape.position.size();
+     data.weight_flappy.resize(N_vertex);
+     data.weight_flappy.fill(0.5f);
+     data.squashing_power_buffer.resize(N_vertex);
+     data.squashing_power_buffer.fill(1.0);*/
+
+    init_local_buffers(data, N_joint);
+    data.shader = shader;
+
+    assert_vcl_no_msg(check_integrity(data));
+    return data;
+}
+
 void init_local_buffers(data_loaded &data, unsigned int N_joint)
 {
     int N_vertex = data.shape.position.size();
@@ -1641,6 +1766,23 @@ data_loaded load_flower_data(GLuint shader)
     return data;
 }
 
+//data_loaded load_doll_data(GLuint shader)
+//{
+//    //data_loaded data = load_basic_data_directory({ "assets/flower/", shader });
+//    data_loaded data = load_basic_animation_data_directory_withProxyGeo({ "assets/doll/", shader, 0.25f });
+//
+//    return data;
+//}
+data_loaded load_doll_data(GLuint shader)
+{
+    //bool animation_exists = check_file_exist("assets/custom/skeleton_animation");
+    //data_loaded data = animation_exists ? load_basic_animation_data_directory({ "assets/custom/", shader, 0.5f }) : load_basic_data_directory({ "assets/custom/", shader, 0.5f });
+
+    data_loaded data = load_basic_animation_data_directory_withProxyGeo({ "assets/doll/", shader });
+
+    return data;
+}
+
 data_loaded load_dragon_data(GLuint shader)
 {
     //data_loaded data = load_basic_data_directory({ "assets/dragon/", shader });
@@ -1669,7 +1811,7 @@ data_loaded load_custom_data(GLuint shader)
 
 bool check_integrity(data_loaded const& data)
 {
-    size_t const N_vertex = data.shape.position.size();
+    size_t const N_vertex = data.shape.position.size() || data.proxy_shape.position.size();
     check_vcl_no_msg(N_vertex>0);
 
     size_t const N_joint = data.skeleton.rest_pose.size();

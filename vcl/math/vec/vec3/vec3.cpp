@@ -13,6 +13,34 @@ vec3::buffer_stack(float x_arg, float y_arg, float z_arg)
     :x(x_arg),y(y_arg),z(z_arg)
 {}
 
+const float& vec3::operator[](std::size_t index) const
+{
+    switch(index) {
+    case 0:
+        return x;
+    case 1:
+        return y;
+    case 2:
+        return z;
+    default:
+        error_vcl("Try to access vec3["+std::to_string(index)+"]");
+    }
+
+}
+float& vec3::operator[](std::size_t index)
+{
+    switch(index) {
+    case 0:
+        return x;
+    case 1:
+        return y;
+    case 2:
+        return z;
+    default:
+        error_vcl("Try to access vec3["+std::to_string(index)+"]");
+    }
+
+}
 
 size_t vec3::size() const
 {
@@ -20,6 +48,14 @@ size_t vec3::size() const
 }
 
 
+const float& vec3::operator()(std::size_t index) const
+{
+    return (*this)[index];
+}
+float& vec3::operator()(std::size_t index)
+{
+    return (*this)[index];
+}
 float const& vec3::at(std::size_t index) const
 {
     return (*this)[index];
