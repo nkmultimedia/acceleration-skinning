@@ -1,4 +1,4 @@
-# Squashy Skinning
+# Acceleration Skinning
 
 
 ## On Windows system with Visual Studio 
